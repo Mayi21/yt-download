@@ -4,43 +4,161 @@ use tauri::Emitter;
 
 /// 获取 yt-dlp 可执行文件路径
 fn get_ytdlp_path() -> String {
-    // 开发环境：使用绝对路径
-    let dev_path = if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
-        "/Users/liuge/project/yt-download/yt-dlp-desktop/src-tauri/bin/yt-dlp"
-    } else {
-        "C:\\Users\\liuge\\project\\yt-download\\yt-dlp-desktop\\src-tauri\\bin\\yt-dlp.exe"
-    };
+    // 在调试模式下使用开发路径
+    #[cfg(debug_assertions)]
+    {
+        // 开发环境：使用绝对路径
+        let dev_path = if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
+            "/Users/liuge/project/yt-download/yt-dlp-desktop/src-tauri/bin/yt-dlp"
+        } else {
+            "C:\\Users\\liuge\\project\\yt-download\\yt-dlp-desktop\\src-tauri\\bin\\yt-dlp.exe"
+        };
 
-    // 检查开发路径
-    if std::path::Path::new(dev_path).exists() {
-        log::info!("使用开发环境路径: {}", dev_path);
-        return dev_path.to_string();
+        // 检查开发路径是否存在
+        if std::path::Path::new(dev_path).exists() {
+            crate::logger::AppLogger::get().info(&format!("使用开发环境路径: {}", dev_path));
+            return dev_path.to_string();
+        }
     }
 
-    // 回退到相对路径（生产环境）
+    // 生产环境：获取可执行文件路径并推导资源目录
+    #[cfg(not(debug_assertions))]
+    {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if cfg!(target_os = "macos") {
+                // macOS: .app/Contents/MacOS/exe -> .app/Contents/Resources/bin/yt-dlp
+                if let Some(resources_path) = exe_path
+                    .parent() // MacOS 目录
+                    .and_then(|p| p.parent()) // Contents 目录
+                    .map(|p| p.join("Resources").join("bin").join("yt-dlp"))
+                {
+                    if resources_path.exists() {
+                        let path = resources_path.to_string_lossy().to_string();
+                        crate::logger::AppLogger::get().info(&format!("使用生产环境路径: {}", path));
+                        return path;
+                    }
+                }
+            } else if cfg!(target_os = "windows") {
+                // Windows: exe 同级目录下的 bin/yt-dlp.exe
+                if let Some(parent) = exe_path.parent() {
+                    let yt_dlp_path = parent.join("bin").join("yt-dlp.exe");
+                    if yt_dlp_path.exists() {
+                        let path = yt_dlp_path.to_string_lossy().to_string();
+                        crate::logger::AppLogger::get().info(&format!("使用生产环境路径: {}", path));
+                        return path;
+                    }
+                }
+            } else if cfg!(target_os = "linux") {
+                // Linux: exe 同级目录下的 bin/yt-dlp
+                if let Some(parent) = exe_path.parent() {
+                    let yt_dlp_path = parent.join("bin").join("yt-dlp");
+                    if yt_dlp_path.exists() {
+                        let path = yt_dlp_path.to_string_lossy().to_string();
+                        crate::logger::AppLogger::get().info(&format!("使用生产环境路径: {}", path));
+                        return path;
+                    }
+                }
+            }
+        }
+    }
+
+    // 备用方案（不应该到达这里）
     let fallback = if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
         "./bin/yt-dlp"
     } else {
         ".\\bin\\yt-dlp.exe"
     };
-    log::info!("使用生产环境路径: {}", fallback);
+    crate::logger::AppLogger::get().warn(&format!("使用备用路径: {}", fallback));
+    fallback.to_string()
+}
+
+/// 获取 ffmpeg 目录路径（用于 --ffmpeg-location 参数）
+fn get_ffmpeg_path() -> String {
+    // 在调试模式下使用开发路径
+    #[cfg(debug_assertions)]
+    {
+        // 开发环境：使用绝对路径
+        let dev_path = if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
+            "/Users/liuge/project/yt-download/yt-dlp-desktop/src-tauri/bin"
+        } else {
+            "C:\\Users\\liuge\\project\\yt-download\\yt-dlp-desktop\\src-tauri\\bin"
+        };
+
+        // 检查开发路径是否存在
+        if std::path::Path::new(dev_path).exists() {
+            crate::logger::AppLogger::get().info(&format!("使用开发环境 ffmpeg 路径: {}", dev_path));
+            return dev_path.to_string();
+        }
+    }
+
+    // 生产环境：获取可执行文件路径并推导资源目录
+    #[cfg(not(debug_assertions))]
+    {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if cfg!(target_os = "macos") {
+                // macOS: .app/Contents/MacOS/exe -> .app/Contents/Resources/bin/
+                if let Some(resources_path) = exe_path
+                    .parent() // MacOS 目录
+                    .and_then(|p| p.parent()) // Contents 目录
+                    .map(|p| p.join("Resources").join("bin"))
+                {
+                    if resources_path.exists() {
+                        let path = resources_path.to_string_lossy().to_string();
+                        crate::logger::AppLogger::get().info(&format!("使用生产环境 ffmpeg 路径: {}", path));
+                        return path;
+                    }
+                }
+            } else if cfg!(target_os = "windows") {
+                // Windows: exe 同级目录下的 bin/
+                if let Some(parent) = exe_path.parent() {
+                    let ffmpeg_path = parent.join("bin");
+                    if ffmpeg_path.exists() {
+                        let path = ffmpeg_path.to_string_lossy().to_string();
+                        crate::logger::AppLogger::get().info(&format!("使用生产环境 ffmpeg 路径: {}", path));
+                        return path;
+                    }
+                }
+            } else if cfg!(target_os = "linux") {
+                // Linux: exe 同级目录下的 bin/
+                if let Some(parent) = exe_path.parent() {
+                    let ffmpeg_path = parent.join("bin");
+                    if ffmpeg_path.exists() {
+                        let path = ffmpeg_path.to_string_lossy().to_string();
+                        crate::logger::AppLogger::get().info(&format!("使用生产环境 ffmpeg 路径: {}", path));
+                        return path;
+                    }
+                }
+            }
+        }
+    }
+
+    // 备用方案（不应该到达这里）
+    let fallback = if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
+        "./bin"
+    } else {
+        ".\\bin"
+    };
+    crate::logger::AppLogger::get().warn(&format!("使用备用 ffmpeg 路径: {}", fallback));
     fallback.to_string()
 }
 
 /// 获取视频信息
 pub async fn get_video_info(url: &str) -> Result<VideoInfo, String> {
     let ytdlp_path = get_ytdlp_path();
+    let ffmpeg_path = get_ffmpeg_path();
 
     // 使用自定义日志记录
     let logger = crate::logger::AppLogger::get();
     logger.info(&format!("开始获取视频信息: {}", url));
     logger.debug(&format!("yt-dlp 路径: {}", ytdlp_path));
+    logger.debug(&format!("ffmpeg 路径: {}", ffmpeg_path));
 
 
     // 只在调试模式下打印
     #[cfg(debug_assertions)]
     {
         println!("[DEBUG] yt-dlp path: {}", ytdlp_path);
+        println!("[DEBUG] ffmpeg path: {}", ffmpeg_path);
         println!("[DEBUG] Video URL: {}", url);
         println!("[DEBUG] Executing yt-dlp command...");
     }
@@ -52,6 +170,8 @@ pub async fn get_video_info(url: &str) -> Result<VideoInfo, String> {
         .arg("--all-formats")  // 获取所有可用格式
         .arg("--format-sort")
         .arg("res,fps,hdr:12,vcodec:vp9.2,acodec")  // 按分辨率、帧率、HDR排序
+        .arg("--ffmpeg-location")
+        .arg(&ffmpeg_path)  // 指定 ffmpeg 位置
         .arg(url)
         .output()
         .map_err(|e| {
@@ -103,11 +223,13 @@ pub async fn download_video(
     window: tauri::Window,
 ) -> Result<(), String> {
     let ytdlp_path = get_ytdlp_path();
+    let ffmpeg_path = get_ffmpeg_path();
 
     let logger = crate::logger::AppLogger::get();
 
     // 记录下载开始
     logger.info(&format!("开始下载: URL={}, 格式={}, 输出路径={}", url, format_id, output_path));
+    logger.debug(&format!("使用 ffmpeg 路径: {}", ffmpeg_path));
 
     // 如果是4K格式，给出提示
     if format_id.contains("701") || format_id.contains("315") || format_id.contains("337") {
@@ -154,6 +276,7 @@ pub async fn download_video(
        .arg("--socket-timeout").arg("30")  // Socket 超时30秒
        .arg("--no-check-certificates")  // 跳过SSL证书检查（临时解决方案）
        .arg("--user-agent").arg("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")  // 设置用户代理
+       .arg("--ffmpeg-location").arg(&ffmpeg_path)  // 指定 ffmpeg 位置
        .arg("--embed-metadata")  // 嵌入元数据
        .arg("--write-thumbnail")  // 下载缩略图
        .arg("--convert-thumbnails").arg("jpg") // 转换缩略图为 JPG
@@ -616,12 +739,15 @@ mod tests {
 /// 网络连接诊断
 pub async fn diagnose_network_issue(url: &str) -> Result<String, String> {
     let ytdlp_path = get_ytdlp_path();
-    
+    let ffmpeg_path = get_ffmpeg_path();
+
     // 测试基本连接
     let output = Command::new(&ytdlp_path)
         .arg("--simulate")
         .arg("--no-playlist")
         .arg("--verbose")
+        .arg("--ffmpeg-location")
+        .arg(&ffmpeg_path)
         .arg(url)
         .output()
         .map_err(|e| format!("Failed to run diagnostic: {}", e))?;

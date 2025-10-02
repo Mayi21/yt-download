@@ -41,7 +41,9 @@
     "shortDescription": "A modern YouTube video downloader",
     "longDescription": "A modern, cross-platform YouTube video downloader built with Tauri, React, and TypeScript. Supports high-quality downloads up to 4K, HDR videos, and multiple formats.",
     "resources": [
-      "bin/yt-dlp"
+      "bin/yt-dlp",
+      "bin/ffmpeg",
+      "bin/ffprobe"
     ],
     "macOS": {
       "frameworks": [],

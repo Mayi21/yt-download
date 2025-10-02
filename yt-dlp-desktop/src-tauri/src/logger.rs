@@ -10,7 +10,8 @@ use once_cell::sync::Lazy;
 pub enum LogLevel {
     Debug = 0,
     Info = 1,
-    Error = 2,
+    Warning = 2,
+    Error = 3,
 }
 
 impl std::fmt::Display for LogLevel {
@@ -18,6 +19,7 @@ impl std::fmt::Display for LogLevel {
         match self {
             LogLevel::Debug => write!(f, "DEBUG"),
             LogLevel::Info => write!(f, "INFO"),
+            LogLevel::Warning => write!(f, "WARN"),
             LogLevel::Error => write!(f, "ERROR"),
         }
     }
@@ -176,6 +178,10 @@ impl AppLogger {
             if let Err(e) = inner.writer.write_all(log_entry.as_bytes()) {
                 eprintln!("写入日志失败: {}", e);
             } else {
+                if let Err(e) = inner.writer.flush() {
+                    eprintln!("刷新日志缓冲失败: {}", e);
+                }
+
                 inner.current_size += log_entry.len() as u64;
 
                 // 检查是否需要轮转
@@ -183,11 +189,6 @@ impl AppLogger {
                     if let Err(e) = self.rotate_current(&mut inner) {
                         eprintln!("日志轮转失败: {}", e);
                     }
-                }
-
-                // 只在重要日志时刷新缓冲区
-                if level >= LogLevel::Error {
-                    let _ = inner.writer.flush();
                 }
             }
         }
@@ -230,6 +231,11 @@ impl AppLogger {
     /// 记录 DEBUG 级别日志
     pub fn debug(&self, message: &str) {
         self.write_log(LogLevel::Debug, message);
+    }
+
+    /// 记录 WARNING 级别日志
+    pub fn warn(&self, message: &str) {
+        self.write_log(LogLevel::Warning, message);
     }
 
     /// 获取日志文件路径
