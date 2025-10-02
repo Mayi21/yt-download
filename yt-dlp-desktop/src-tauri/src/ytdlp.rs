@@ -276,7 +276,7 @@ async fn parse_download_progress(stdout: std::process::ChildStdout, window: taur
                 let total_str = captures.get(1).unwrap().as_str();
                 let total_bytes = parse_size_to_bytes(total_str);
                 last_total_bytes = total_bytes;
-                total_downloaded += total_bytes; // 累加下载量
+                _total_downloaded += total_bytes; // 累加下载量
                 
                 let progress = crate::types::DownloadProgress {
                     status: "downloading".to_string(),
