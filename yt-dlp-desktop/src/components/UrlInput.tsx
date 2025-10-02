@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isValidYouTubeUrl } from '../services/api';
 
 interface UrlInputProps {
@@ -7,6 +8,7 @@ interface UrlInputProps {
 }
 
 export function UrlInput({ onFetch, isLoading = false }: UrlInputProps) {
+  const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
 
@@ -15,12 +17,12 @@ export function UrlInput({ onFetch, isLoading = false }: UrlInputProps) {
 
     // 验证 URL
     if (!url.trim()) {
-      setError('请输入 YouTube 链接');
+      setError('Please enter YouTube URL');
       return;
     }
 
     if (!isValidYouTubeUrl(url)) {
-      setError('无效的 YouTube 链接');
+      setError('Invalid YouTube URL');
       return;
     }
 
@@ -48,7 +50,7 @@ export function UrlInput({ onFetch, isLoading = false }: UrlInputProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="url-input" className="block text-sm font-medium mb-2">
-            🔗 YouTube 链接
+            🔗 YouTube URL
           </label>
           <div className="flex gap-2">
             <div className="flex-1 relative">
@@ -56,7 +58,7 @@ export function UrlInput({ onFetch, isLoading = false }: UrlInputProps) {
                 id="url-input"
                 type="text"
                 className={`input ${error ? 'border-error' : ''}`}
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder={t('url.placeholder')}
                 value={url}
                 onChange={handleChange}
                 disabled={isLoading}
@@ -71,7 +73,7 @@ export function UrlInput({ onFetch, isLoading = false }: UrlInputProps) {
               className="btn btn-secondary"
               disabled={isLoading}
             >
-              📋 粘贴
+              📋 Paste
             </button>
           </div>
         </div>
@@ -84,10 +86,10 @@ export function UrlInput({ onFetch, isLoading = false }: UrlInputProps) {
           {isLoading ? (
             <>
               <span className="inline-block animate-spin mr-2">⏳</span>
-              获取中...
+              {t('url.fetching')}
             </>
           ) : (
-            '获取视频信息 →'
+            `${t('url.fetch')} →`
           )}
         </button>
       </form>

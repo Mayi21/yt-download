@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "YouTube Downloader",
+    "subtitle": "Fast YouTube video downloads with multiple formats and quality options"
+  },
+  "url": {
+    "placeholder": "Enter YouTube video URL...",
+    "fetch": "Get Video Info",
+    "fetching": "Getting video info..."
+  },
+  "video": {
+    "duration": "Duration",
+    "uploader": "Uploader",
+    "views": "views",
+    "uploadDate": "Upload Date"
+  },
+  "download": {
+    "savePath": "Save Location",
+    "browse": "Browse",
+    "selectPath": "Select save location...",
+    "format": "Format",
+    "quality": "Quality",
+    "audioOnly": "Audio Only",
+    "includeSubtitles": "Include Subtitles",
+    "preferHdr": "Prefer HDR",
+    "start": "Start Download",
+    "cancel": "Cancel",
+    "pause": "Pause",
+    "resume": "Resume",
+    "retry": "Retry",
+    "openFolder": "Open Folder"
+  },
+  "progress": {
+    "downloading": "Downloading...",
+    "processing": "Processing...",
+    "finished": "Download Complete!",
+    "error": "Download Failed",
+    "preparing": "Preparing...",
+    "preparingDownload": "Preparing download...",
+    "starting": "Starting...",
+    "speed": "Speed:",
+    "eta": "ETA:",
+    "merging": "Merging video and audio...",
+    "metadata": "Adding metadata...",
+    "cleanup": "Cleaning up temporary files...",
+    "pleaseWait": "Please wait, processing file..."
+  },
+  "settings": {
+    "language": "Language",
+    "defaultSavePath": "Default Save Path",
+    "setDefault": "Set as Default",
+    "clearDefault": "Clear Default"
+  },
+  "errors": {
+    "fetchFailed": "Failed to get video information",
+    "selectPathFirst": "Please select save location first",
+    "downloadFailed": "Download failed"
+  },
+  "footer": {
+    "poweredBy": "Powered by yt-dlp | Tauri + React"
+  }
+}

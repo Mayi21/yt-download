@@ -52,6 +52,7 @@ pub struct DownloadProgress {
     pub downloaded: u64,
     pub total: u64,
     pub filename: String,
+    pub file_path: Option<String>,
 }
 
 /// 下载历史记录

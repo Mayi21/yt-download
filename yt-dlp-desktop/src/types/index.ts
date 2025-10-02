@@ -47,6 +47,7 @@ export interface DownloadProgress {
   downloaded: number;            // 已下载字节数
   total: number;                 // 总字节数
   filename: string;              // 文件名
+  file_path?: string;            // 文件完整路径（下载完成后）
 }
 
 /**

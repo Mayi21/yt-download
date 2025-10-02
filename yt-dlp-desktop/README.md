@@ -1,149 +1,253 @@
 # YouTube Downloader Desktop
 
-基于 Tauri + React + TypeScript 构建的跨平台 YouTube 视频下载器。
+<div align="center">
 
-## 🎯 特性
+![YouTube Downloader](https://img.shields.io/badge/YouTube-Downloader-red?style=for-the-badge&logo=youtube)
+![Tauri](https://img.shields.io/badge/Tauri-2.0-blue?style=for-the-badge&logo=tauri)
+![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
+![Rust](https://img.shields.io/badge/Rust-1.70+-orange?style=for-the-badge&logo=rust)
 
-- ✅ 跨平台支持（macOS, Windows）
-- ✅ 现代化 UI 界面
-- ✅ 支持多种清晰度（4K, 1080p, 720p, 480p, 360p）
-- ✅ 支持多种格式（MP4, WebM, MKV）
-- ✅ 实时下载进度显示
-- ✅ 仅音频下载选项
-- ✅ 字幕下载支持
+A modern, cross-platform YouTube video downloader built with Tauri, React, and TypeScript.
 
-## 📋 前置要求
+[English](#english) | [中文](#中文)
 
-### 前端开发（只需要 Node.js）
-- Node.js 18+
-- npm 或 pnpm
+</div>
 
-### 后端开发（需要 Rust）
-- Rust 1.70+
-- yt-dlp（将被打包进应用）
+---
 
-## 🚀 快速开始
+## English
 
-### 安装依赖
+### ✨ Features
 
-```bash
-npm install
-```
+- 🎥 **High-Quality Downloads**: Support for up to 4K (2160p) video downloads
+- 🌈 **HDR Support**: Download HDR videos with enhanced color depth
+- 🎵 **Audio-Only Mode**: Extract high-quality audio tracks
+- 📱 **Multiple Formats**: MP4, WebM, MKV support
+- 🔄 **DASH Format Merging**: Automatic video and audio stream combination
+- 📝 **Subtitle Support**: Download videos with embedded subtitles
+- 🌍 **Internationalization**: English and Chinese language support
+- 📊 **Real-time Progress**: Live download progress with speed and ETA
+- 💾 **Smart Defaults**: Configurable default save locations
+- 🖥️ **Cross-Platform**: Windows, macOS, and Linux support
 
-### 前端开发（使用 Mock 数据，不需要 Rust）
+### 🚀 Quick Start
 
-```bash
-# 确保 .env.development 中 VITE_USE_MOCK=true
-npm run dev
-```
+#### Prerequisites
 
-这将启动前端开发服务器，使用 Mock 数据，前端开发者可以独立开发 UI。
+- [Node.js](https://nodejs.org/) (v16 or higher)
+- [Rust](https://rustup.rs/) (latest stable)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) binary
 
-访问：http://localhost:5173
+#### Installation
 
-### 全栈开发（需要 Rust）
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/yt-dlp-desktop.git
+   cd yt-dlp-desktop
+   ```
 
-```bash
-# 确保 .env.development 中 VITE_USE_MOCK=false
-npm run tauri dev
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-这将启动完整的 Tauri 应用，前后端都会运行。
+3. **Setup yt-dlp binary**
+   - Download the latest yt-dlp binary from [releases](https://github.com/yt-dlp/yt-dlp/releases)
+   - Place it in `src-tauri/bin/` directory
+   - Make it executable (Linux/macOS): `chmod +x src-tauri/bin/yt-dlp`
 
-## 🔄 并行开发指南
+4. **Run in development mode**
+   ```bash
+   npm run tauri dev
+   ```
 
-本项目支持前后端并行开发！
+5. **Build for production**
+   ```bash
+   npm run tauri build
+   ```
 
-### 前端开发者
+### 📖 Usage
 
-**环境配置：**
-- 设置 `.env.development` 中 `VITE_USE_MOCK=true`
-- 运行 `npm run dev`
-- 使用 Mock 数据开发 UI
-- 无需安装 Rust 和 yt-dlp
+1. **Enter YouTube URL**: Paste any YouTube video URL
+2. **Select Quality**: Choose from available resolutions (144p to 4K)
+3. **Choose Format**: Select MP4, WebM, or MKV
+4. **Configure Options**: 
+   - Audio-only downloads
+   - Subtitle inclusion
+   - HDR preference
+5. **Set Save Location**: Choose where to save your downloads
+6. **Start Download**: Monitor real-time progress
 
-**开发任务：**
-- UI 组件优化
-- 交互逻辑完善
-- 响应式布局
-- 深色模式支持
+### 🛠️ Configuration
 
-### 后端开发者
+The app automatically saves your preferences:
+- Default save location
+- Language preference
+- Download settings
 
-**环境配置：**
-```bash
-# 安装 Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+Configuration is stored in:
+- **Windows**: `%APPDATA%/yt-dlp-desktop/config.json`
+- **macOS**: `~/Library/Application Support/yt-dlp-desktop/config.json`
+- **Linux**: `~/.config/yt-dlp-desktop/config.json`
 
-# 进入后端目录
-cd src-tauri
-
-# 运行测试
-cargo test
-```
-
-**开发任务：**
-- 实现 Tauri Commands
-- 封装 yt-dlp 调用
-- 解析下载进度
-- 错误处理
-
-## 📁 项目结构
+### 🏗️ Architecture
 
 ```
 yt-dlp-desktop/
-├── src/                      # 前端代码
-│   ├── components/           # React 组件
-│   ├── services/             # API 和服务
-│   ├── types/                # TypeScript 类型定义
-│   └── App.tsx               # 主应用组件
-│
-├── src-tauri/                # Rust 后端
+├── src/                    # React frontend
+│   ├── components/         # UI components
+│   ├── services/          # API services
+│   ├── types/             # TypeScript types
+│   └── i18n/              # Internationalization
+├── src-tauri/             # Rust backend
 │   ├── src/
-│   │   ├── main.rs           # 主入口
-│   │   └── commands.rs       # Tauri 命令实现
-│   └── Cargo.toml            # Rust 依赖
-│
-├── docs/                     # 技术文档
-│   └── YouTube下载器技术方案.md
-│
-├── .env.development          # 开发环境变量
-└── README.md                 # 本文档
+│   │   ├── commands.rs    # Tauri commands
+│   │   ├── config.rs      # Configuration management
+│   │   ├── types.rs       # Rust types
+│   │   └── ytdlp.rs       # yt-dlp integration
+│   └── bin/               # yt-dlp binary
+└── public/                # Static assets
 ```
 
-## 📦 构建
+### 🤝 Contributing
 
-### 开发构建
-```bash
-npm run tauri build
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+### 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### 🙏 Acknowledgments
+
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - The powerful YouTube downloader
+- [Tauri](https://tauri.app/) - Build smaller, faster, and more secure desktop applications
+- [React](https://reactjs.org/) - A JavaScript library for building user interfaces
+
+---
+
+## 中文
+
+### ✨ 功能特性
+
+- 🎥 **高质量下载**: 支持最高 4K (2160p) 视频下载
+- 🌈 **HDR 支持**: 下载具有增强色彩深度的 HDR 视频
+- 🎵 **纯音频模式**: 提取高质量音频轨道
+- 📱 **多种格式**: 支持 MP4、WebM、MKV 格式
+- 🔄 **DASH 格式合并**: 自动合并视频和音频流
+- 📝 **字幕支持**: 下载带有嵌入字幕的视频
+- 🌍 **国际化**: 支持英文和中文界面
+- 📊 **实时进度**: 实时显示下载进度、速度和预计时间
+- 💾 **智能默认**: 可配置的默认保存位置
+- 🖥️ **跨平台**: 支持 Windows、macOS 和 Linux
+
+### 🚀 快速开始
+
+#### 环境要求
+
+- [Node.js](https://nodejs.org/) (v16 或更高版本)
+- [Rust](https://rustup.rs/) (最新稳定版)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) 二进制文件
+
+#### 安装步骤
+
+1. **克隆仓库**
+   ```bash
+   git clone https://github.com/yourusername/yt-dlp-desktop.git
+   cd yt-dlp-desktop
+   ```
+
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **设置 yt-dlp 二进制文件**
+   - 从 [releases](https://github.com/yt-dlp/yt-dlp/releases) 下载最新的 yt-dlp 二进制文件
+   - 将其放置在 `src-tauri/bin/` 目录中
+   - 设置可执行权限 (Linux/macOS): `chmod +x src-tauri/bin/yt-dlp`
+
+4. **开发模式运行**
+   ```bash
+   npm run tauri dev
+   ```
+
+5. **生产环境构建**
+   ```bash
+   npm run tauri build
+   ```
+
+### 📖 使用方法
+
+1. **输入 YouTube 链接**: 粘贴任意 YouTube 视频链接
+2. **选择清晰度**: 从可用分辨率中选择 (144p 到 4K)
+3. **选择格式**: 选择 MP4、WebM 或 MKV
+4. **配置选项**: 
+   - 仅音频下载
+   - 包含字幕
+   - HDR 偏好
+5. **设置保存位置**: 选择下载文件的保存位置
+6. **开始下载**: 监控实时下载进度
+
+### 🛠️ 配置
+
+应用会自动保存您的偏好设置：
+- 默认保存位置
+- 语言偏好
+- 下载设置
+
+配置文件存储位置：
+- **Windows**: `%APPDATA%/yt-dlp-desktop/config.json`
+- **macOS**: `~/Library/Application Support/yt-dlp-desktop/config.json`
+- **Linux**: `~/.config/yt-dlp-desktop/config.json`
+
+### 🏗️ 项目架构
+
+```
+yt-dlp-desktop/
+├── src/                    # React 前端
+│   ├── components/         # UI 组件
+│   ├── services/          # API 服务
+│   ├── types/             # TypeScript 类型
+│   └── i18n/              # 国际化
+├── src-tauri/             # Rust 后端
+│   ├── src/
+│   │   ├── commands.rs    # Tauri 命令
+│   │   ├── config.rs      # 配置管理
+│   │   ├── types.rs       # Rust 类型
+│   │   └── ytdlp.rs       # yt-dlp 集成
+│   └── bin/               # yt-dlp 二进制文件
+└── public/                # 静态资源
 ```
 
-### 为特定平台构建
+### 🤝 贡献
 
-**macOS:**
-```bash
-npm run tauri build -- --target universal-apple-darwin
-```
+1. Fork 本仓库
+2. 创建功能分支: `git checkout -b feature/amazing-feature`
+3. 提交更改: `git commit -m 'Add amazing feature'`
+4. 推送到分支: `git push origin feature/amazing-feature`
+5. 创建 Pull Request
 
-**Windows:**
-```bash
-npm run tauri build -- --target x86_64-pc-windows-msvc
-```
+### 📄 许可证
 
-## 🛠️ 技术栈
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-- React 18 + TypeScript
-- TailwindCSS
-- Tauri (Rust)
-- yt-dlp
+### 🙏 致谢
 
-## 📚 相关资源
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - 强大的 YouTube 下载工具
+- [Tauri](https://tauri.app/) - 构建更小、更快、更安全的桌面应用
+- [React](https://reactjs.org/) - 用于构建用户界面的 JavaScript 库
 
-- [完整技术文档](../docs/YouTube下载器技术方案.md)
-- [Tauri 文档](https://tauri.app/)
-- [React 文档](https://react.dev/)
-- [yt-dlp GitHub](https://github.com/yt-dlp/yt-dlp)
+---
 
-## Recommended IDE Setup
+<div align="center">
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+**[⬆ Back to top](#youtube-downloader-desktop)**
+
+Made with ❤️ by the community
+
+</div>

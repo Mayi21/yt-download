@@ -1,19 +1,23 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { VideoFormat, QualityOption, FormatOption } from '../types';
 import { formatFileSize } from '../services/api';
 
 interface FormatSelectorProps {
   formats: VideoFormat[];
   onSelect: (formatId: string, audioOnly: boolean, includeSubtitles: boolean, preferHdr?: boolean) => void;
+  isDownloading?: boolean;
 }
 
-export function FormatSelector({ formats, onSelect }: FormatSelectorProps) {
+export function FormatSelector({ formats, onSelect, isDownloading = false }: FormatSelectorProps) {
+  const { t } = useTranslation();
   const [selectedQuality, setSelectedQuality] = useState<QualityOption>('1080p');
   const [selectedFormat, setSelectedFormat] = useState<FormatOption>('mp4');
   const [audioOnly, setAudioOnly] = useState(false);
   const [includeSubtitles, setIncludeSubtitles] = useState(false);
   const [preferHdr, setPreferHdr] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
 
   // 获取可用的清晰度选项
   const availableQualities: QualityOption[] = ['2160p', '1440p', '1080p', '720p', '480p', '360p', '240p', '144p'];
@@ -194,9 +198,17 @@ export function FormatSelector({ formats, onSelect }: FormatSelectorProps) {
   };
 
   const handleDownload = () => {
+    if (isDownloading || isClicked) return;
+    
     const format = getSelectedFormat();
     if (format) {
+      setIsClicked(true);
       onSelect(format.format_id, audioOnly, includeSubtitles, preferHdr);
+      
+      // 重置点击状态（防止卡住）
+      setTimeout(() => {
+        setIsClicked(false);
+      }, 2000);
     }
   };
 
@@ -204,11 +216,11 @@ export function FormatSelector({ formats, onSelect }: FormatSelectorProps) {
 
   return (
     <div className="card space-y-6">
-      <h3 className="text-lg font-semibold">下载选项</h3>
+      <h3 className="text-lg font-semibold">Download Options</h3>
 
       {/* 清晰度选择 */}
       <div>
-        <label className="block text-sm font-medium mb-3">清晰度</label>
+        <label className="block text-sm font-medium mb-3">{t('download.quality')}</label>
         <div className="grid grid-cols-4 gap-2">
           {availableQualities.map((quality) => {
             const hasQuality = qualityFormats.some((f) => f.quality_label === quality);
@@ -232,7 +244,7 @@ export function FormatSelector({ formats, onSelect }: FormatSelectorProps) {
 
       {/* 格式选择 */}
       <div>
-        <label className="block text-sm font-medium mb-3">格式</label>
+        <label className="block text-sm font-medium mb-3">{t('download.format')}</label>
         <div className="flex gap-2">
           {(['mp4', 'webm', 'mkv'] as FormatOption[]).map((format) => {
             // 检查当前清晰度下是否有这种格式可用
@@ -266,7 +278,7 @@ export function FormatSelector({ formats, onSelect }: FormatSelectorProps) {
             onChange={(e) => setAudioOnly(e.target.checked)}
             className="w-4 h-4 text-primary focus:ring-primary"
           />
-          <span className="text-sm">🎵 仅音频（最佳音质）</span>
+          <span className="text-sm">🎵 {t('download.audioOnly')}</span>
         </label>
 
         <label className="flex items-center gap-2 cursor-pointer">
@@ -276,7 +288,7 @@ export function FormatSelector({ formats, onSelect }: FormatSelectorProps) {
             onChange={(e) => setIncludeSubtitles(e.target.checked)}
             className="w-4 h-4 text-primary focus:ring-primary"
           />
-          <span className="text-sm">📝 包含字幕</span>
+          <span className="text-sm">📝 {t('download.includeSubtitles')}</span>
         </label>
 
         {hasHdrForQuality(selectedQuality) && !audioOnly && (
@@ -287,7 +299,7 @@ export function FormatSelector({ formats, onSelect }: FormatSelectorProps) {
               onChange={(e) => setPreferHdr(e.target.checked)}
               className="w-4 h-4 text-primary focus:ring-primary"
             />
-            <span className="text-sm">🌈 优先选择 HDR（高动态范围）</span>
+            <span className="text-sm">🌈 {t('download.preferHdr')}</span>
           </label>
         )}
       </div>
@@ -343,8 +355,23 @@ export function FormatSelector({ formats, onSelect }: FormatSelectorProps) {
         </div>
       )}
 
-      <button onClick={handleDownload} className="btn btn-primary w-full py-3 text-lg">
-        ⬇️ 开始下载
+      <button 
+        onClick={handleDownload} 
+        disabled={isDownloading || isClicked}
+        className={`btn w-full py-3 text-lg transition-all duration-300 ${
+          isDownloading || isClicked 
+            ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' 
+            : 'btn-primary hover:scale-105 active:scale-95'
+        }`}
+      >
+        {isDownloading || isClicked ? (
+          <div className="flex items-center justify-center gap-2">
+            <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+            <span>{isDownloading ? t('progress.downloading') : t('progress.starting')}</span>
+          </div>
+        ) : (
+          <>⬇️ {t('download.start')}</>
+        )}
       </button>
     </div>
   );

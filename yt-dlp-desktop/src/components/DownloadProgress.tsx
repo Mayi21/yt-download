@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import type { DownloadProgress as DownloadProgressType } from '../types';
-import { formatSpeed, formatFileSize, formatTime } from '../services/api';
+import { formatSpeed, formatFileSize, formatTime, openFileLocation } from '../services/api';
 
 interface DownloadProgressProps {
   progress: DownloadProgressType;
@@ -16,18 +17,20 @@ export function DownloadProgress({
   onResume,
   isPaused = false,
 }: DownloadProgressProps) {
+  const { t } = useTranslation();
+  
   const getStatusText = () => {
     switch (progress.status) {
       case 'downloading':
-        return '下载中...';
+        return t('progress.downloading');
       case 'processing':
-        return '处理中...';
+        return t('progress.processing');
       case 'finished':
-        return '✅ 下载完成！';
+        return `✅ ${t('progress.finished')}`;
       case 'error':
-        return '❌ 下载失败';
+        return `❌ ${t('progress.error')}`;
       default:
-        return '准备中...';
+        return t('progress.preparing');
     }
   };
 
@@ -86,11 +89,11 @@ export function DownloadProgress({
         {progress.status === 'downloading' && (
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-600 dark:text-gray-400">速度:</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('progress.speed')}</span>
               <span className="ml-2 font-medium">{formatSpeed(progress.speed)}</span>
             </div>
             <div>
-              <span className="text-gray-600 dark:text-gray-400">剩余时间:</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('progress.eta')}</span>
               <span className="ml-2 font-medium">{formatTime(progress.eta)}</span>
             </div>
           </div>
@@ -101,15 +104,15 @@ export function DownloadProgress({
           <div className="flex gap-2">
             {isPaused ? (
               <button onClick={onResume} className="btn btn-primary flex-1">
-                ▶️ 继续
+                ▶️ {t('download.resume')}
               </button>
             ) : (
               <button onClick={onPause} className="btn btn-secondary flex-1">
-                ⏸️ 暂停
+                ⏸️ {t('download.pause')}
               </button>
             )}
             <button onClick={onCancel} className="btn bg-error text-white hover:bg-red-600 flex-1">
-              ❌ 取消
+              ❌ {t('download.cancel')}
             </button>
           </div>
         )}
@@ -118,18 +121,18 @@ export function DownloadProgress({
         {progress.status === 'processing' && (
           <div className="text-center text-sm text-gray-600 dark:text-gray-400">
             <div className="animate-spin inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
-            请稍候，正在处理文件...
+            {t('progress.pleaseWait')}
           </div>
         )}
 
         {/* 完成后的操作 */}
         {progress.status === 'finished' && (
           <div className="flex gap-2">
-            <button className="btn btn-primary flex-1">
-              📂 打开文件夹
-            </button>
-            <button className="btn btn-secondary flex-1">
-              ▶️ 播放
+            <button 
+              onClick={() => progress.file_path && openFileLocation(progress.file_path)}
+              className="btn btn-primary flex-1"
+            >
+              📂 {t('download.openFolder')}
             </button>
           </div>
         )}
@@ -137,7 +140,7 @@ export function DownloadProgress({
         {/* 错误时的重试按钮 */}
         {progress.status === 'error' && (
           <button className="btn btn-primary w-full">
-            🔄 重试
+            🔄 {t('download.retry')}
           </button>
         )}
       </div>

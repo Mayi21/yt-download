@@ -1,3 +1,4 @@
+use crate::config::AppConfig;
 use crate::types::{DownloadConfig, DownloadHistoryItem, VideoFormat, VideoInfo};
 use crate::ytdlp;
 use tauri::AppHandle;
@@ -75,6 +76,33 @@ pub async fn select_save_path(app: AppHandle) -> Result<Option<String>, String> 
         .blocking_pick_folder();
 
     Ok(result.and_then(|path| path.as_path().map(|p| p.to_string_lossy().to_string())))
+}
+
+/// 获取应用配置
+#[tauri::command]
+pub async fn get_app_config(app: AppHandle) -> Result<AppConfig, String> {
+    AppConfig::load(&app)
+}
+
+/// 保存应用配置
+#[tauri::command]
+pub async fn save_app_config(config: AppConfig, app: AppHandle) -> Result<(), String> {
+    config.save(&app)
+}
+
+/// 获取默认保存路径
+#[tauri::command]
+pub async fn get_default_save_path(app: AppHandle) -> Result<Option<String>, String> {
+    let config = AppConfig::load(&app)?;
+    Ok(config.get_default_save_path())
+}
+
+/// 设置默认保存路径
+#[tauri::command]
+pub async fn set_default_save_path(path: String, app: AppHandle) -> Result<(), String> {
+    let mut config = AppConfig::load(&app)?;
+    config.default_save_path = Some(path);
+    config.save(&app)
 }
 
 /// 获取下载历史（Mock 实现）

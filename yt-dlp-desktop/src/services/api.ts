@@ -101,6 +101,22 @@ export async function openFileLocation(filePath: string): Promise<void> {
 }
 
 /**
+ * 获取默认保存路径
+ * @returns 默认保存路径
+ */
+export async function getDefaultSavePath(): Promise<string | null> {
+  return invoke<string | null>('get_default_save_path');
+}
+
+/**
+ * 设置默认保存路径
+ * @param path 路径
+ */
+export async function setDefaultSavePath(path: string): Promise<void> {
+  return invoke('set_default_save_path', { path });
+}
+
+/**
  * 验证 YouTube URL
  * @param url 待验证的 URL
  * @returns 是否有效

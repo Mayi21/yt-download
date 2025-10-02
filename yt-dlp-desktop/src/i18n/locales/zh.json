@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "YouTube 下载器",
+    "subtitle": "快速下载 YouTube 视频，支持多种格式和清晰度"
+  },
+  "url": {
+    "placeholder": "输入 YouTube 视频链接...",
+    "fetch": "获取视频信息",
+    "fetching": "正在获取视频信息..."
+  },
+  "video": {
+    "duration": "时长",
+    "uploader": "上传者",
+    "views": "次观看",
+    "uploadDate": "上传日期"
+  },
+  "download": {
+    "savePath": "保存位置",
+    "browse": "浏览",
+    "selectPath": "选择保存位置...",
+    "format": "格式",
+    "quality": "清晰度",
+    "audioOnly": "仅音频",
+    "includeSubtitles": "包含字幕",
+    "preferHdr": "优先 HDR",
+    "start": "开始下载",
+    "cancel": "取消",
+    "pause": "暂停",
+    "resume": "继续",
+    "retry": "重试",
+    "openFolder": "打开文件夹"
+  },
+  "progress": {
+    "downloading": "下载中...",
+    "processing": "处理中...",
+    "finished": "下载完成！",
+    "error": "下载失败",
+    "preparing": "准备中...",
+    "preparingDownload": "正在准备下载...",
+    "starting": "启动中...",
+    "speed": "速度：",
+    "eta": "剩余时间：",
+    "merging": "正在合并视频和音频...",
+    "metadata": "正在添加元数据...",
+    "cleanup": "正在清理临时文件...",
+    "pleaseWait": "请稍候，正在处理文件..."
+  },
+  "settings": {
+    "language": "语言",
+    "defaultSavePath": "默认保存路径",
+    "setDefault": "设为默认",
+    "clearDefault": "清除默认"
+  },
+  "errors": {
+    "fetchFailed": "获取视频信息失败",
+    "selectPathFirst": "请先选择保存路径",
+    "downloadFailed": "下载失败"
+  },
+  "footer": {
+    "poweredBy": "基于 yt-dlp 构建 | Tauri + React"
+  }
+}

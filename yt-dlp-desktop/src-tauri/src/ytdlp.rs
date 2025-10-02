@@ -112,6 +112,18 @@ pub async fn download_video(
 
     println!("[DEBUG] Download process started successfully");
 
+    // 发送初始进度状态
+    let _ = window.emit("download-progress", crate::types::DownloadProgress {
+        status: "downloading".to_string(),
+        percent: 0.0,
+        speed: 0.0,
+        eta: 0.0,
+        downloaded: 0,
+        total: 0,
+        filename: "Initializing download...".to_string(),
+        file_path: None,
+    });
+
     // 在后台任务中处理进度输出
     let window_clone = window.clone();
     let progress_handle = if let Some(stdout) = child.stdout.take() {
@@ -134,15 +146,36 @@ pub async fn download_video(
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
     
     if status.success() {
+        // 尝试找到下载的文件
+        let file_path = find_downloaded_file(&output_path);
+        
+        // 获取文件大小
+        let (downloaded_size, total_size) = if let Some(ref path) = file_path {
+            match std::fs::metadata(path) {
+                Ok(metadata) => {
+                    let size = metadata.len();
+                    (size, size)
+                },
+                Err(_) => {
+                    // 如果无法获取文件大小，尝试使用一个合理的默认值
+                    // 对于 DASH 格式，通常视频 + 音频文件会比较大
+                    (100_000_000, 100_000_000) // 100MB 作为默认值
+                }
+            }
+        } else {
+            (100_000_000, 100_000_000) // 100MB 作为默认值
+        };
+        
         // 发送完成事件
         let _ = window.emit("download-progress", crate::types::DownloadProgress {
             status: "finished".to_string(),
             percent: 100.0,
             speed: 0.0,
             eta: 0.0,
-            downloaded: 0,
-            total: 0,
-            filename: "下载完成！".to_string(),
+            downloaded: downloaded_size,
+            total: total_size,
+            filename: "Download completed!".to_string(),
+            file_path,
         });
         println!("[DEBUG] Download completed successfully");
         Ok(())
@@ -156,6 +189,7 @@ pub async fn download_video(
             downloaded: 0,
             total: 0,
             filename: error_msg.clone(),
+            file_path: None,
         });
         Err(error_msg)
     }
@@ -165,6 +199,7 @@ pub async fn download_video(
 async fn parse_download_progress(stdout: std::process::ChildStdout, window: tauri::Window) {
     use std::io::{BufRead, BufReader};
     use regex::Regex;
+
 
     let reader = BufReader::new(stdout);
     
@@ -178,6 +213,7 @@ async fn parse_download_progress(stdout: std::process::ChildStdout, window: taur
     
     let mut last_total_bytes = 0u64;
     let mut current_filename = "Downloading...".to_string();
+    let mut _total_downloaded = 0u64; // 跟踪总下载量
     
     for line in reader.lines() {
         if let Ok(line) = line {
@@ -199,7 +235,8 @@ async fn parse_download_progress(stdout: std::process::ChildStdout, window: taur
                     eta: 0.0,
                     downloaded: last_total_bytes,
                     total: last_total_bytes,
-                    filename: "正在合并视频和音频...".to_string(),
+                    filename: "Merging video and audio...".to_string(),
+                    file_path: None,
                 });
                 continue;
             }
@@ -213,7 +250,8 @@ async fn parse_download_progress(stdout: std::process::ChildStdout, window: taur
                     eta: 0.0,
                     downloaded: last_total_bytes,
                     total: last_total_bytes,
-                    filename: "正在添加元数据...".to_string(),
+                    filename: "Adding metadata...".to_string(),
+                    file_path: None,
                 });
                 continue;
             }
@@ -227,7 +265,8 @@ async fn parse_download_progress(stdout: std::process::ChildStdout, window: taur
                     eta: 0.0,
                     downloaded: last_total_bytes,
                     total: last_total_bytes,
-                    filename: "正在清理临时文件...".to_string(),
+                    filename: "Cleaning up temporary files...".to_string(),
+                    file_path: None,
                 });
                 continue;
             }
@@ -237,6 +276,7 @@ async fn parse_download_progress(stdout: std::process::ChildStdout, window: taur
                 let total_str = captures.get(1).unwrap().as_str();
                 let total_bytes = parse_size_to_bytes(total_str);
                 last_total_bytes = total_bytes;
+                total_downloaded += total_bytes; // 累加下载量
                 
                 let progress = crate::types::DownloadProgress {
                     status: "downloading".to_string(),
@@ -246,6 +286,7 @@ async fn parse_download_progress(stdout: std::process::ChildStdout, window: taur
                     downloaded: total_bytes,
                     total: total_bytes,
                     filename: current_filename.clone(),
+                    file_path: None,
                 };
                 
                 let _ = window.emit("download-progress", &progress);
@@ -278,6 +319,7 @@ async fn parse_download_progress(stdout: std::process::ChildStdout, window: taur
                     downloaded: downloaded_bytes,
                     total: total_bytes,
                     filename: current_filename.clone(),
+                    file_path: None,
                 };
                 
                 // 发送进度事件到前端
@@ -333,6 +375,46 @@ fn parse_eta_to_seconds(eta_str: &str) -> u32 {
             hours * 3600 + minutes * 60 + seconds
         }
         _ => 0,
+    }
+}
+
+/// 查找下载的文件
+fn find_downloaded_file(output_path: &str) -> Option<String> {
+    use std::fs;
+
+    
+    // 尝试读取输出目录
+    if let Ok(entries) = fs::read_dir(output_path) {
+        let mut video_files = Vec::new();
+        
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(ext) = path.extension() {
+                    let ext_str = ext.to_string_lossy().to_lowercase();
+                    // 查找视频文件
+                    if matches!(ext_str.as_str(), "mp4" | "mkv" | "webm" | "avi" | "mov" | "m4a" | "mp3") {
+                        // 排除缩略图文件
+                        if let Some(name) = path.file_name() {
+                            let name_str = name.to_string_lossy();
+                            if !name_str.contains("thumbnail") && !name_str.contains("thumb") && !name_str.contains(".jpg") {
+                                if let Ok(metadata) = path.metadata() {
+                                    if let Ok(modified) = metadata.modified() {
+                                        video_files.push((path.to_string_lossy().to_string(), modified));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 返回最新修改的文件
+        video_files.sort_by(|a, b| b.1.cmp(&a.1));
+        video_files.first().map(|(path, _)| path.clone())
+    } else {
+        None
     }
 }
 

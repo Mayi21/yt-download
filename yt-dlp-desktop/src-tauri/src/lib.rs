@@ -1,5 +1,6 @@
 // 模块声明
 mod commands;
+mod config;
 mod types;
 mod ytdlp;
 
@@ -16,6 +17,10 @@ pub fn run() {
             start_download,
             cancel_download,
             select_save_path,
+            get_app_config,
+            save_app_config,
+            get_default_save_path,
+            set_default_save_path,
             get_download_history,
             clear_download_history,
             open_file_location,

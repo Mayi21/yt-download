@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { VideoInfo as VideoInfoType } from '../types';
 import { formatTime, formatFileSize } from '../services/api';
 
@@ -6,6 +7,8 @@ interface VideoInfoProps {
 }
 
 export function VideoInfo({ video }: VideoInfoProps) {
+  const { t } = useTranslation();
+  
   // 格式化上传日期
   const formatUploadDate = (dateStr: string) => {
     if (!dateStr || dateStr.length !== 8) return dateStr;
@@ -52,33 +55,33 @@ export function VideoInfo({ video }: VideoInfoProps) {
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
-              <span className="font-medium">⏱️ 时长:</span>
+              <span className="font-medium">⏱️ {t('video.duration')}:</span>
               <span>{formatTime(video.duration)}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-medium">👤 上传者:</span>
+              <span className="font-medium">👤 {t('video.uploader')}:</span>
               <span>{video.uploader}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-medium">📅 日期:</span>
+              <span className="font-medium">📅 {t('video.uploadDate')}:</span>
               <span>{formatUploadDate(video.upload_date)}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-medium">👁️ 观看:</span>
-              <span>{formatViewCount(video.view_count)} 次</span>
+              <span className="font-medium">👁️ {t('video.views')}:</span>
+              <span>{formatViewCount(video.view_count)} {t('video.views')}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-medium">📦 大小:</span>
-              <span>{bestFormat.filesize ? formatFileSize(bestFormat.filesize) : '未知'}</span>
+              <span className="font-medium">📦 Size:</span>
+              <span>{bestFormat.filesize ? formatFileSize(bestFormat.filesize) : 'Unknown'}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-medium">🎬 格式:</span>
-              <span>{video.formats.length} 个可用</span>
+              <span className="font-medium">🎬 Formats:</span>
+              <span>{video.formats.length} available</span>
             </div>
           </div>
 
@@ -86,7 +89,7 @@ export function VideoInfo({ video }: VideoInfoProps) {
           {video.description && (
             <details className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               <summary className="cursor-pointer font-medium hover:text-primary">
-                查看描述
+                View Description
               </summary>
               <p className="mt-2 whitespace-pre-wrap">
                 {video.description.length > 200
