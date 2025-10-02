@@ -103,21 +103,26 @@ impl From<YtDlpOutput> for VideoInfo {
             .unwrap_or_default()
             .into_iter()
             .filter_map(|f| {
-                println!("[DEBUG] Processing format: {} - {}x{:?} - {} - {}", 
+                println!("[DEBUG] Processing format: {} - {} - {}x{:?} - vcodec:{} - acodec:{} - note:{}", 
                     f.format_id, 
                     f.ext, 
+                    f.resolution.as_deref().unwrap_or("unknown"),
                     f.height,
                     f.vcodec.as_deref().unwrap_or("none"),
-                    f.acodec.as_deref().unwrap_or("none")
+                    f.acodec.as_deref().unwrap_or("none"),
+                    f.format_note.as_deref().unwrap_or("")
                 );
                 
-                // 过滤掉无用的格式（如 storyboard）
-                if f.ext == "mhtml" || f.format_id.starts_with("sb") {
+                // 过滤掉无用的格式（如 storyboard, images）
+                if f.ext == "mhtml" || f.format_id.starts_with("sb") || f.ext == "jpg" || f.ext == "webp" {
                     return None;
                 }
                 
-                // 只保留有视频或音频的格式（排除两者都为 none 的格式）
-                if f.vcodec.as_deref() == Some("none") && f.acodec.as_deref() == Some("none") {
+                // 保留有视频或音频的格式
+                let has_video = f.vcodec.as_deref() != Some("none") && f.vcodec.as_deref() != Some("images");
+                let has_audio = f.acodec.as_deref() != Some("none");
+                
+                if !has_video && !has_audio {
                     return None;
                 }
 

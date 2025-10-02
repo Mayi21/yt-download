@@ -13,7 +13,7 @@ fn get_ytdlp_path() -> String {
 
     // 检查开发路径
     if std::path::Path::new(dev_path).exists() {
-        println!("[DEBUG] Using dev path: {}", dev_path);
+        log::info!("使用开发环境路径: {}", dev_path);
         return dev_path.to_string();
     }
 
@@ -23,7 +23,7 @@ fn get_ytdlp_path() -> String {
     } else {
         ".\\bin\\yt-dlp.exe"
     };
-    println!("[DEBUG] Using fallback path: {}", fallback);
+    log::info!("使用生产环境路径: {}", fallback);
     fallback.to_string()
 }
 
@@ -31,21 +31,36 @@ fn get_ytdlp_path() -> String {
 pub async fn get_video_info(url: &str) -> Result<VideoInfo, String> {
     let ytdlp_path = get_ytdlp_path();
 
-    println!("[DEBUG] yt-dlp path: {}", ytdlp_path);
-    println!("[DEBUG] Video URL: {}", url);
-    println!("[DEBUG] Executing yt-dlp command...");
+    // 使用自定义日志记录
+    let logger = crate::logger::AppLogger::get();
+    logger.info(&format!("开始获取视频信息: {}", url));
+    logger.debug(&format!("yt-dlp 路径: {}", ytdlp_path));
 
-    // 执行 yt-dlp 获取 JSON
+
+    // 只在调试模式下打印
+    #[cfg(debug_assertions)]
+    {
+        println!("[DEBUG] yt-dlp path: {}", ytdlp_path);
+        println!("[DEBUG] Video URL: {}", url);
+        println!("[DEBUG] Executing yt-dlp command...");
+    }
+
+    // 执行 yt-dlp 获取 JSON，包含所有格式
     let output = Command::new(&ytdlp_path)
         .arg("-J")  // 等同于 --dump-single-json
         .arg("--no-playlist")
+        .arg("--all-formats")  // 获取所有可用格式
+        .arg("--format-sort")
+        .arg("res,fps,hdr:12,vcodec:vp9.2,acodec")  // 按分辨率、帧率、HDR排序
         .arg(url)
         .output()
         .map_err(|e| {
-            println!("[ERROR] Failed to execute yt-dlp: {}", e);
-            format!("Failed to execute yt-dlp: {}", e)
+            let error_msg = format!("Failed to execute yt-dlp: {}", e);
+            logger.error(&error_msg);
+            error_msg
         })?;
 
+    #[cfg(debug_assertions)]
     println!("[DEBUG] yt-dlp execution completed");
 
     if !output.status.success() {
@@ -55,10 +70,29 @@ pub async fn get_video_info(url: &str) -> Result<VideoInfo, String> {
 
     // 解析 JSON 输出
     let json_str = String::from_utf8_lossy(&output.stdout);
+    
+    // 记录获取到的格式数量
+    logger.debug(&format!("yt-dlp 输出长度: {} 字符", json_str.len()));
+    
     let ytdlp_output: YtDlpOutput = serde_json::from_str(&json_str)
-        .map_err(|e| format!("Failed to parse yt-dlp output: {}", e))?;
+        .map_err(|e| {
+            logger.error(&format!("解析 yt-dlp 输出失败: {}", e));
+            logger.debug(&format!("原始输出: {}", &json_str[..json_str.len().min(1000)]));
+            format!("Failed to parse yt-dlp output: {}", e)
+        })?;
 
-    Ok(ytdlp_output.into())
+    let video_info: VideoInfo = ytdlp_output.into();
+    
+    // 记录找到的格式
+    logger.info(&format!("找到 {} 个可用格式", video_info.formats.len()));
+    // 只记录4K格式，避免过多日志
+    for format in &video_info.formats {
+        if format.quality_label.contains("2160") {
+            logger.debug(&format!("发现 4K 格式: {} - {}", format.format_id, format.quality_label));
+        }
+    }
+
+    Ok(video_info)
 }
 
 /// 下载视频（支持自动合并 DASH 格式和实时进度）
@@ -70,8 +104,30 @@ pub async fn download_video(
 ) -> Result<(), String> {
     let ytdlp_path = get_ytdlp_path();
 
-    println!("[DEBUG] Starting download with format: {}", format_id);
-    println!("[DEBUG] Output path: {}", output_path);
+    let logger = crate::logger::AppLogger::get();
+
+    // 记录下载开始
+    logger.info(&format!("开始下载: URL={}, 格式={}, 输出路径={}", url, format_id, output_path));
+
+    // 如果是4K格式，给出提示
+    if format_id.contains("701") || format_id.contains("315") || format_id.contains("337") {
+        logger.info("检测到4K格式下载，将使用增强的网络重试策略");
+    }
+
+    #[cfg(debug_assertions)]
+    {
+        println!("[DEBUG] Starting download with format: {}", format_id);
+        println!("[DEBUG] Output path: {}", output_path);
+    }
+
+    // 检查输出目录是否存在
+    if !std::path::Path::new(output_path).exists() {
+        if let Err(e) = std::fs::create_dir_all(output_path) {
+            let error_msg = format!("无法创建输出目录: {}", e);
+            logger.error(&error_msg);
+            return Err(error_msg);
+        }
+    }
 
     // 构建输出模板：output_path/%(title)s.%(ext)s
     let output_template = format!("{}/%(title)s.%(ext)s", output_path);
@@ -86,12 +142,19 @@ pub async fn download_video(
 
     // 对于 DASH 格式，确保启用合并
     if format_id.contains('+') {
+        #[cfg(debug_assertions)]
         println!("[DEBUG] DASH format detected, enabling merge");
         cmd.arg("--merge-output-format").arg("mp4");
     }
 
-    // 添加其他有用的参数
-    cmd.arg("--embed-metadata")  // 嵌入元数据
+    // 添加网络和重试相关参数
+    cmd.arg("--retries").arg("10")  // 重试10次
+       .arg("--fragment-retries").arg("10")  // 片段重试10次
+       .arg("--retry-sleep").arg("linear=1:5:10")  // 重试间隔：线性增长1-5-10秒
+       .arg("--socket-timeout").arg("30")  // Socket 超时30秒
+       .arg("--no-check-certificates")  // 跳过SSL证书检查（临时解决方案）
+       .arg("--user-agent").arg("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")  // 设置用户代理
+       .arg("--embed-metadata")  // 嵌入元数据
        .arg("--write-thumbnail")  // 下载缩略图
        .arg("--convert-thumbnails").arg("jpg") // 转换缩略图为 JPG
        .arg("--newline")  // 每行输出进度
@@ -134,6 +197,55 @@ pub async fn download_video(
         None
     };
 
+    // 捕获 stderr 输出用于错误诊断
+    let stderr_handle = if let Some(stderr) = child.stderr.take() {
+        Some(tokio::spawn(async move {
+            use std::io::{BufRead, BufReader};
+            let reader = BufReader::new(stderr);
+            let mut error_output = String::new();
+            let mut error_lines = Vec::new();
+
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    // 只在调试模式下打印到控制台
+                    #[cfg(debug_assertions)]
+                    println!("[STDERR] {}", line);
+
+                    error_output.push_str(&line);
+                    error_output.push('\n');
+
+                    // 只记录重要的错误信息，过滤进度和调试信息
+                    if line.contains("ERROR") ||
+                       line.contains("error") ||
+                       line.contains("failed") ||
+                       line.contains("SSL") ||
+                       line.contains("certificate") ||
+                       line.contains("timeout") {
+                        error_lines.push(line.clone());
+                    }
+                }
+            }
+
+            // 批量记录错误（最多记录前10条重要错误）
+            if !error_lines.is_empty() {
+                let logger = crate::logger::AppLogger::get();
+                let error_summary = if error_lines.len() > 10 {
+                    format!("yt-dlp 发生 {} 个错误，前10个：\n{}",
+                            error_lines.len(),
+                            error_lines.iter().take(10).map(|s| format!("  - {}", s)).collect::<Vec<_>>().join("\n"))
+                } else {
+                    format!("yt-dlp 错误：\n{}",
+                            error_lines.iter().map(|s| format!("  - {}", s)).collect::<Vec<_>>().join("\n"))
+                };
+                logger.error(&error_summary);
+            }
+
+            error_output
+        }))
+    } else {
+        None
+    };
+
     // 等待进程完成
     let status = child.wait().map_err(|e| format!("Failed to wait for process: {}", e))?;
     
@@ -141,6 +253,13 @@ pub async fn download_video(
     if let Some(handle) = progress_handle {
         let _ = handle.await;
     }
+    
+    // 获取错误输出
+    let error_output = if let Some(handle) = stderr_handle {
+        handle.await.unwrap_or_default()
+    } else {
+        String::new()
+    };
     
     // 给进度解析一点时间完成
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
@@ -177,10 +296,29 @@ pub async fn download_video(
             filename: "Download completed!".to_string(),
             file_path,
         });
+
+        #[cfg(debug_assertions)]
         println!("[DEBUG] Download completed successfully");
+
         Ok(())
     } else {
-        let error_msg = format!("Download failed with exit code: {:?}", status.code());
+        let error_msg = if !error_output.is_empty() {
+            format!("Download failed with exit code: {:?}\nError details: {}", status.code(), error_output)
+        } else {
+            format!("Download failed with exit code: {:?}", status.code())
+        };
+        
+        // 记录详细错误信息
+        logger.error(&format!("下载失败: {}", error_msg));
+
+        // 检查是否是SSL错误，如果是，尝试备用策略
+        if error_output.contains("SSL") || error_output.contains("ssl") {
+            logger.info("检测到SSL错误，建议尝试以下解决方案：");
+            logger.info("1. 检查网络连接");
+            logger.info("2. 尝试选择较低分辨率的格式");
+            logger.info("3. 稍后重试");
+        }
+        
         let _ = window.emit("download-progress", crate::types::DownloadProgress {
             status: "error".to_string(),
             percent: 0.0,
@@ -474,4 +612,68 @@ mod tests {
             println!("Video title: {}", info.title);
         }
     }
+}
+/// 网络连接诊断
+pub async fn diagnose_network_issue(url: &str) -> Result<String, String> {
+    let ytdlp_path = get_ytdlp_path();
+    
+    // 测试基本连接
+    let output = Command::new(&ytdlp_path)
+        .arg("--simulate")
+        .arg("--no-playlist")
+        .arg("--verbose")
+        .arg(url)
+        .output()
+        .map_err(|e| format!("Failed to run diagnostic: {}", e))?;
+    
+    let _stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    let mut diagnosis = String::new();
+    
+    if stderr.contains("SSL") {
+        diagnosis.push_str("🔍 SSL连接问题检测到\n");
+        diagnosis.push_str("建议解决方案:\n");
+        diagnosis.push_str("• 检查网络连接稳定性\n");
+        diagnosis.push_str("• 尝试使用VPN或更换网络\n");
+        diagnosis.push_str("• 选择较低分辨率格式\n");
+    }
+    
+    if stderr.contains("timeout") || stderr.contains("Timeout") {
+        diagnosis.push_str("⏱️ 网络超时问题\n");
+        diagnosis.push_str("建议:\n");
+        diagnosis.push_str("• 检查网络速度\n");
+        diagnosis.push_str("• 稍后重试\n");
+    }
+    
+    if diagnosis.is_empty() {
+        diagnosis.push_str("✅ 网络连接正常，可能是临时问题，请重试");
+    }
+    
+    Ok(diagnosis)
+}
+
+/// 获取推荐的备用格式
+pub fn get_fallback_formats(original_format: &str) -> Vec<String> {
+    let mut fallbacks = Vec::new();
+    
+    // 如果原格式是4K，提供降级选项
+    if original_format.contains("701") || original_format.contains("315") || original_format.contains("337") {
+        // 4K -> 1440p
+        fallbacks.push("308+258".to_string()); // 1440p60 webm + audio
+        fallbacks.push("299+258".to_string()); // 1080p60 mp4 + audio
+        fallbacks.push("136+258".to_string()); // 720p mp4 + audio
+        fallbacks.push("best[height<=1080]".to_string()); // 最佳1080p或以下
+    } else if original_format.contains("308") {
+        // 1440p -> 1080p
+        fallbacks.push("299+258".to_string());
+        fallbacks.push("136+258".to_string());
+        fallbacks.push("best[height<=720]".to_string());
+    }
+    
+    // 通用备用选项
+    fallbacks.push("best".to_string());
+    fallbacks.push("worst".to_string());
+    
+    fallbacks
 }

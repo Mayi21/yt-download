@@ -156,3 +156,9 @@ pub async fn open_file_location(file_path: String) -> Result<(), String> {
 
     Ok(())
 }
+/// 获取日志文件路径
+#[tauri::command]
+pub async fn get_log_path() -> Result<String, String> {
+    let logger = crate::logger::AppLogger::get();
+    Ok(logger.get_log_path().to_string_lossy().to_string())
+}
