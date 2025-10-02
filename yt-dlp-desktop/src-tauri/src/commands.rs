@@ -23,7 +23,7 @@ pub async fn list_formats(url: String) -> Result<Vec<VideoFormat>, String> {
 
 /// 开始下载
 #[tauri::command]
-pub async fn start_download(config: DownloadConfig) -> Result<String, String> {
+pub async fn start_download(config: DownloadConfig, window: tauri::Window) -> Result<String, String> {
     println!("[COMMAND] start_download called");
     println!("[COMMAND] URL: {}", config.url);
     println!("[COMMAND] Format ID: {}", config.format_id);
@@ -45,8 +45,8 @@ pub async fn start_download(config: DownloadConfig) -> Result<String, String> {
 
     println!("[COMMAND] Final format ID: {}", final_format_id);
 
-    // 启动下载
-    ytdlp::download_video(&config.url, &final_format_id, &config.output_path).await?;
+    // 启动下载（传递 window 用于进度事件）
+    ytdlp::download_video(&config.url, &final_format_id, &config.output_path, window).await?;
 
     println!("[COMMAND] Download started successfully");
     

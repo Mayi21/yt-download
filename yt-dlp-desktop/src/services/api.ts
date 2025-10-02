@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import type {
   VideoInfo,
   VideoFormat,
@@ -35,12 +36,28 @@ export function startDownload(
   config: DownloadConfig,
   onProgress: (progress: DownloadProgress) => void
 ): () => void {
-  // 真实实现：使用 Tauri Event 监听进度
-  // TODO: 实现真实的下载和进度监听
-  invoke('start_download', { config });
+  // 监听下载进度事件
+  const unlisten = listen('download-progress', (event) => {
+    const progress = event.payload as DownloadProgress;
+    onProgress(progress);
+  });
+
+  // 启动下载
+  invoke('start_download', { config }).catch((error) => {
+    console.error('Failed to start download:', error);
+    onProgress({
+      status: 'error',
+      percent: 0,
+      speed: 0,
+      eta: 0,
+      downloaded: 0,
+      total: 0,
+      filename: `Error: ${error}`,
+    });
+  });
 
   return () => {
-    console.log('Download cleanup');
+    unlisten.then(fn => fn());
   };
 }
 

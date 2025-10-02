@@ -97,7 +97,7 @@ export function DownloadProgress({
         )}
 
         {/* 控制按钮 */}
-        {progress.status === 'downloading' && (
+        {progress.status === 'downloading' && progress.percent < 100 && (
           <div className="flex gap-2">
             {isPaused ? (
               <button onClick={onResume} className="btn btn-primary flex-1">
@@ -111,6 +111,14 @@ export function DownloadProgress({
             <button onClick={onCancel} className="btn bg-error text-white hover:bg-red-600 flex-1">
               ❌ 取消
             </button>
+          </div>
+        )}
+
+        {/* 处理中状态 */}
+        {progress.status === 'processing' && (
+          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+            <div className="animate-spin inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
+            请稍候，正在处理文件...
           </div>
         )}
 
