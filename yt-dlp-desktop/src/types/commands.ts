@@ -2,7 +2,6 @@ import type {
   VideoInfo,
   VideoFormat,
   DownloadConfig,
-  DownloadResult,
   DownloadHistoryItem,
 } from './index';
 
