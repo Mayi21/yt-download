@@ -24,9 +24,32 @@ pub async fn list_formats(url: String) -> Result<Vec<VideoFormat>, String> {
 /// 开始下载
 #[tauri::command]
 pub async fn start_download(config: DownloadConfig) -> Result<String, String> {
-    // 启动下载（这里简化处理，实际应该使用异步进程和进度监听）
-    ytdlp::download_video(&config.url, &config.format_id, &config.output_path).await?;
+    println!("[COMMAND] start_download called");
+    println!("[COMMAND] URL: {}", config.url);
+    println!("[COMMAND] Format ID: {}", config.format_id);
+    println!("[COMMAND] Output path: {}", config.output_path);
+    println!("[COMMAND] Audio only: {}", config.audio_only);
+    println!("[COMMAND] Include subtitles: {}", config.include_subtitles);
 
+    // 如果是仅音频下载，修改格式选择
+    let final_format_id = if config.audio_only {
+        // 对于仅音频，使用 bestaudio 或指定的音频格式
+        if config.format_id.contains("audio") {
+            config.format_id
+        } else {
+            "bestaudio/best".to_string()
+        }
+    } else {
+        config.format_id
+    };
+
+    println!("[COMMAND] Final format ID: {}", final_format_id);
+
+    // 启动下载
+    ytdlp::download_video(&config.url, &final_format_id, &config.output_path).await?;
+
+    println!("[COMMAND] Download started successfully");
+    
     // 返回下载任务 ID（这里简化为 URL）
     Ok(config.url)
 }

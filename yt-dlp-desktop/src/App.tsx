@@ -40,7 +40,7 @@ function App() {
   };
 
   // 开始下载
-  const handleStartDownload = (formatId: string, audioOnly: boolean, includeSubtitles: boolean) => {
+  const handleStartDownload = (formatId: string, audioOnly: boolean, includeSubtitles: boolean, preferHdr: boolean = false) => {
     if (!videoInfo || !savePath) {
       alert('请先选择保存路径');
       return;
@@ -52,6 +52,7 @@ function App() {
       output_path: savePath,
       audio_only: audioOnly,
       include_subtitles: includeSubtitles,
+      prefer_hdr: preferHdr,
     };
 
     // 开始下载并监听进度

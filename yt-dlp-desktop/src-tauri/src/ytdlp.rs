@@ -60,7 +60,7 @@ pub async fn get_video_info(url: &str) -> Result<VideoInfo, String> {
     Ok(ytdlp_output.into())
 }
 
-/// 下载视频（简化版本，仅启动下载）
+/// 下载视频（支持自动合并 DASH 格式）
 pub async fn download_video(
     url: &str,
     format_id: &str,
@@ -68,20 +68,83 @@ pub async fn download_video(
 ) -> Result<(), String> {
     let ytdlp_path = get_ytdlp_path();
 
+    println!("[DEBUG] Starting download with format: {}", format_id);
+    println!("[DEBUG] Output path: {}", output_path);
+
     // 构建输出模板：output_path/%(title)s.%(ext)s
     let output_template = format!("{}/%(title)s.%(ext)s", output_path);
 
+    // 构建 yt-dlp 命令
+    let mut cmd = Command::new(&ytdlp_path);
+    
+    // 基本参数
+    cmd.arg("-f").arg(format_id)
+       .arg("-o").arg(&output_template)
+       .arg("--no-playlist");
+
+    // 对于 DASH 格式，确保启用合并
+    if format_id.contains('+') {
+        println!("[DEBUG] DASH format detected, enabling merge");
+        cmd.arg("--merge-output-format").arg("mp4");
+    }
+
+    // 添加其他有用的参数
+    cmd.arg("--embed-metadata")  // 嵌入元数据
+       .arg("--write-thumbnail")  // 下载缩略图
+       .arg("--convert-thumbnails").arg("jpg") // 转换缩略图为 JPG
+       .arg("--newline")  // 每行输出进度
+       .arg("--no-colors") // 禁用颜色输出
+       .arg(url); // 添加 URL 参数
+
+    println!("[DEBUG] Executing command: {:?}", cmd);
+
     // 执行下载命令
-    let _output = Command::new(&ytdlp_path)
-        .arg("-f")
-        .arg(format_id)
-        .arg("-o")
-        .arg(&output_template)
-        .arg(url)
+    let _output = cmd
         .spawn()
         .map_err(|e| format!("Failed to start download: {}", e))?;
 
+    println!("[DEBUG] Download process started successfully");
     Ok(())
+}
+
+/// 获取最佳格式（自动选择需要合并的 DASH 格式）
+pub fn get_best_format_for_quality(formats: &[crate::types::VideoFormat], quality: &str, preferred_ext: &str) -> Option<String> {
+    // 首先尝试找到完整的格式（不需要合并）
+    if let Some(format) = formats.iter().find(|f| 
+        f.quality_label == quality && 
+        f.ext == preferred_ext && 
+        f.vcodec != "none" && 
+        f.acodec != "none"
+    ) {
+        println!("[DEBUG] Found complete format: {}", format.format_id);
+        return Some(format.format_id.clone());
+    }
+
+    // 如果没有完整格式，寻找需要合并的 DASH 格式
+    let video_format = formats.iter().find(|f| 
+        f.quality_label == quality && 
+        f.vcodec != "none" && 
+        f.acodec == "none"
+    );
+
+    let audio_format = formats.iter().find(|f| 
+        f.vcodec == "none" && 
+        f.acodec != "none"
+    ).or_else(|| {
+        // 如果没有纯音频格式，找最佳音频格式
+        formats.iter()
+            .filter(|f| f.acodec != "none")
+            .max_by_key(|f| f.tbr.unwrap_or(0.0) as u32)
+    });
+
+    if let (Some(video), Some(audio)) = (video_format, audio_format) {
+        let combined_format = format!("{}+{}", video.format_id, audio.format_id);
+        println!("[DEBUG] Created DASH combined format: {}", combined_format);
+        return Some(combined_format);
+    }
+
+    println!("[DEBUG] No suitable format found for quality: {}", quality);
+    None
 }
 
 #[cfg(test)]

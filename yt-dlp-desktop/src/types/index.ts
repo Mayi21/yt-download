@@ -27,6 +27,8 @@ export interface VideoFormat {
   acodec: string;                // 音频编码
   tbr: number | null;            // 比特率（可能为null）
   format_note: string;           // 格式说明
+  hdr: boolean;                  // 是否支持 HDR
+  is_dash: boolean;              // 是否是 DASH 格式
 }
 
 /**
@@ -56,6 +58,7 @@ export interface DownloadConfig {
   output_path: string;           // 输出路径
   audio_only: boolean;           // 是否仅下载音频
   include_subtitles: boolean;    // 是否包含字幕
+  prefer_hdr: boolean;           // 是否优先选择 HDR
 }
 
 /**
@@ -82,7 +85,7 @@ export interface DownloadHistoryItem {
 /**
  * 清晰度选项
  */
-export type QualityOption = '2160p' | '1080p' | '720p' | '480p' | '360p';
+export type QualityOption = '2160p' | '1440p' | '1080p' | '720p' | '480p' | '360p' | '240p' | '144p';
 
 /**
  * 格式选项
