@@ -4,11 +4,11 @@
 
 ![YouTube Downloader](https://img.shields.io/badge/YouTube-Downloader-red?style=for-the-badge&logo=youtube)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-blue?style=for-the-badge&logo=tauri)
-![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)
+![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![Rust](https://img.shields.io/badge/Rust-1.70+-orange?style=for-the-badge&logo=rust)
 
-基于 Tauri、React 和 TypeScript 构建的现代化跨平台 YouTube 视频下载器。
+基于 Tauri、React 和 TypeScript 构建的现代化 YouTube 视频下载器。
 
 [English](README.md) | [中文](README_zh.md)
 
@@ -25,22 +25,37 @@
 - 🌍 **国际化**: 支持英文和中文界面
 - 📊 **实时进度**: 实时显示下载进度、速度和预计时间
 - 💾 **智能默认**: 可配置的默认保存位置
-- 🖥️ **跨平台**: 支持 Windows、macOS 和 Linux
 
-## 🚀 快速开始
+## 📦 下载安装
+
+### 预编译版本
+
+从 [Releases](https://github.com/Mayi21/yt-download/releases) 下载最新版本：
+
+**当前版本：v1.0.0**
+- **macOS (Apple Silicon)**: [YouTube Downloader_1.0.0_aarch64.dmg](https://github.com/Mayi21/yt-download/releases/download/v1.0.0/YouTube.Downloader_1.0.0_aarch64.dmg)
+
+### 平台支持
+
+**v1.0.0 状态：**
+- ✅ macOS (Apple Silicon - M1/M2/M3/M4)
+- ⏳ macOS (Intel) - 计划中
+- ⏳ Windows - 计划中
+- ⏳ Linux - 计划中
+
+## 🚀 从源码构建
 
 ### 环境要求
 
 - [Node.js](https://nodejs.org/) (v16 或更高版本)
 - [Rust](https://rustup.rs/) (最新稳定版)
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) 二进制文件
 
 ### 安装步骤
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/yourusername/yt-dlp-desktop.git
-   cd yt-dlp-desktop
+   git clone https://github.com/Mayi21/yt-download.git
+   cd yt-download/yt-dlp-desktop
    ```
 
 2. **安装依赖**
@@ -48,20 +63,17 @@
    npm install
    ```
 
-3. **设置 yt-dlp 二进制文件**
-   - 从 [releases](https://github.com/yt-dlp/yt-dlp/releases) 下载最新的 yt-dlp 二进制文件
-   - 将其放置在 `src-tauri/bin/` 目录中
-   - 设置可执行权限 (Linux/macOS): `chmod +x src-tauri/bin/yt-dlp`
-
-4. **开发模式运行**
+3. **开发模式运行**
    ```bash
    npm run tauri dev
    ```
 
-5. **生产环境构建**
+4. **生产环境构建**
    ```bash
    npm run tauri build
    ```
+
+> **注意**：所需的二进制文件（yt-dlp、ffmpeg、ffprobe）已包含在仓库的 `src-tauri/bin/` 目录中。
 
 ## 📖 使用方法
 
@@ -83,27 +95,27 @@
 - 下载设置
 
 配置文件存储位置：
-- **Windows**: `%APPDATA%/yt-dlp-desktop/config.json`
-- **macOS**: `~/Library/Application Support/yt-dlp-desktop/config.json`
-- **Linux**: `~/.config/yt-dlp-desktop/config.json`
+- **macOS**: `~/Library/Application Support/com.youtube-downloader.desktop/config.json`
 
 ## 🏗️ 项目架构
 
 ```
-yt-dlp-desktop/
-├── src/                    # React 前端
-│   ├── components/         # UI 组件
-│   ├── services/          # API 服务
-│   ├── types/             # TypeScript 类型
-│   └── i18n/              # 国际化
-├── src-tauri/             # Rust 后端
-│   ├── src/
-│   │   ├── commands.rs    # Tauri 命令
-│   │   ├── config.rs      # 配置管理
-│   │   ├── types.rs       # Rust 类型
-│   │   └── ytdlp.rs       # yt-dlp 集成
-│   └── bin/               # yt-dlp 二进制文件
-└── public/                # 静态资源
+yt-download/                # 仓库根目录
+└── yt-dlp-desktop/        # 主项目目录
+    ├── src/               # React 前端
+    │   ├── components/    # UI 组件
+    │   ├── services/      # API 服务
+    │   ├── types/         # TypeScript 类型
+    │   └── i18n/          # 国际化
+    ├── src-tauri/         # Rust 后端
+    │   ├── src/
+    │   │   ├── commands.rs    # Tauri 命令
+    │   │   ├── config.rs      # 配置管理
+    │   │   ├── types.rs       # Rust 类型
+    │   │   ├── ytdlp.rs       # yt-dlp 集成
+    │   │   └── logger.rs      # 日志系统
+    │   └── bin/               # 二进制文件 (yt-dlp, ffmpeg, ffprobe)
+    └── public/            # 静态资源
 ```
 
 ## 🤝 贡献

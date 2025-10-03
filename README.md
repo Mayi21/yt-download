@@ -4,11 +4,11 @@
 
 ![YouTube Downloader](https://img.shields.io/badge/YouTube-Downloader-red?style=for-the-badge&logo=youtube)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-blue?style=for-the-badge&logo=tauri)
-![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)
+![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![Rust](https://img.shields.io/badge/Rust-1.70+-orange?style=for-the-badge&logo=rust)
 
-A modern, cross-platform YouTube video downloader built with Tauri, React, and TypeScript.
+A modern YouTube video downloader built with Tauri, React, and TypeScript.
 
 [English](README.md) | [中文](README_zh.md)
 
@@ -25,22 +25,37 @@ A modern, cross-platform YouTube video downloader built with Tauri, React, and T
 - 🌍 **Internationalization**: English and Chinese language support
 - 📊 **Real-time Progress**: Live download progress with speed and ETA
 - 💾 **Smart Defaults**: Configurable default save locations
-- 🖥️ **Cross-Platform**: Windows, macOS, and Linux support
 
-## 🚀 Quick Start
+## 📦 Download
+
+### Prebuilt Releases
+
+Download the latest version from [Releases](https://github.com/Mayi21/yt-download/releases):
+
+**Current Version: v1.0.0**
+- **macOS (Apple Silicon)**: [YouTube Downloader_1.0.0_aarch64.dmg](https://github.com/Mayi21/yt-download/releases/download/v1.0.0/YouTube.Downloader_1.0.0_aarch64.dmg)
+
+### Platform Support
+
+**v1.0.0 Status:**
+- ✅ macOS (Apple Silicon - M1/M2/M3/M4)
+- ⏳ macOS (Intel) - Planned
+- ⏳ Windows - Planned
+- ⏳ Linux - Planned
+
+## 🚀 Build from Source
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v16 or higher)
 - [Rust](https://rustup.rs/) (latest stable)
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) binary
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/yt-dlp-desktop.git
-   cd yt-dlp-desktop
+   git clone https://github.com/Mayi21/yt-download.git
+   cd yt-download/yt-dlp-desktop
    ```
 
 2. **Install dependencies**
@@ -48,20 +63,17 @@ A modern, cross-platform YouTube video downloader built with Tauri, React, and T
    npm install
    ```
 
-3. **Setup yt-dlp binary**
-   - Download the latest yt-dlp binary from [releases](https://github.com/yt-dlp/yt-dlp/releases)
-   - Place it in `src-tauri/bin/` directory
-   - Make it executable (Linux/macOS): `chmod +x src-tauri/bin/yt-dlp`
-
-4. **Run in development mode**
+3. **Run in development mode**
    ```bash
    npm run tauri dev
    ```
 
-5. **Build for production**
+4. **Build for production**
    ```bash
    npm run tauri build
    ```
+
+> **Note**: The required binaries (yt-dlp, ffmpeg, ffprobe) are included in the repository under `src-tauri/bin/`.
 
 ## 📖 Usage
 
@@ -83,27 +95,27 @@ The app automatically saves your preferences:
 - Download settings
 
 Configuration is stored in:
-- **Windows**: `%APPDATA%/yt-dlp-desktop/config.json`
-- **macOS**: `~/Library/Application Support/yt-dlp-desktop/config.json`
-- **Linux**: `~/.config/yt-dlp-desktop/config.json`
+- **macOS**: `~/Library/Application Support/com.youtube-downloader.desktop/config.json`
 
 ## 🏗️ Architecture
 
 ```
-yt-dlp-desktop/
-├── src/                    # React frontend
-│   ├── components/         # UI components
-│   ├── services/          # API services
-│   ├── types/             # TypeScript types
-│   └── i18n/              # Internationalization
-├── src-tauri/             # Rust backend
-│   ├── src/
-│   │   ├── commands.rs    # Tauri commands
-│   │   ├── config.rs      # Configuration management
-│   │   ├── types.rs       # Rust types
-│   │   └── ytdlp.rs       # yt-dlp integration
-│   └── bin/               # yt-dlp binary
-└── public/                # Static assets
+yt-download/                # Repository root
+└── yt-dlp-desktop/        # Main project directory
+    ├── src/               # React frontend
+    │   ├── components/    # UI components
+    │   ├── services/      # API services
+    │   ├── types/         # TypeScript types
+    │   └── i18n/          # Internationalization
+    ├── src-tauri/         # Rust backend
+    │   ├── src/
+    │   │   ├── commands.rs    # Tauri commands
+    │   │   ├── config.rs      # Configuration management
+    │   │   ├── types.rs       # Rust types
+    │   │   ├── ytdlp.rs       # yt-dlp integration
+    │   │   └── logger.rs      # Logging system
+    │   └── bin/               # Binaries (yt-dlp, ffmpeg, ffprobe)
+    └── public/            # Static assets
 ```
 
 ## 🤝 Contributing
